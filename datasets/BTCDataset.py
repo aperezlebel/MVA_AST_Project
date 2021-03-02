@@ -17,6 +17,7 @@ class BTCDataset(BaseDataset):
         data = pd.read_csv(path)
         data['Unix'] = pd.to_datetime(data['Unix'], unit='s')
         data.set_index('Unix', inplace=True)
+        data.sort_index(axis=0, inplace=True)
         self._data = data
 
     @property

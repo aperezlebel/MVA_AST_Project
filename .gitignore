@@ -1,6 +1,7 @@
 # Custom
 data
 .DS_Store
+*_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
