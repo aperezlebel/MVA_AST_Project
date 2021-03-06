@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.decomposition import DictionaryLearning
 from joblib import Memory
+from dtaidistance import dtw
 
 from datasets import BTCDataset
 
@@ -114,4 +115,12 @@ if __name__ == '__main__':
     X_pred.plot()
     X_test.plot()
     # plt.yscale('log')
+
+    MSE = np.linalg.norm(X_test.values - X_pred.values)
+
+    DTW = dtw.distance_fast(X_test.values, X_pred.values)
+    print(f'MSE: {MSE:.0f}')
+    print(f'DTW: {DTW:.0f}')
+
     plt.show()
+
