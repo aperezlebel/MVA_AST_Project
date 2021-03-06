@@ -10,7 +10,7 @@ from datasets import BTCDataset
 memory = Memory('joblib_cache/', verbose=0)
 
 ds = BTCDataset()
-print(ds.X)
+# print(ds.X)
 
 # ds.X.plot()
 # plt.yscale('log')
@@ -31,35 +31,43 @@ X_test = ds.X[test_idx]
 s = 12
 w = 24
 
-# Dictionnary learning
-@memory.cache
-def dict_learning(X_train, s, w):
-    n_h = X_train.shape[0]
+def window_split(X, s, w):
+    X = np.array(X).reshape(-1, 1)
 
+    n_h = X.shape[0]
     c = int((n_h - w)/s + 1)
-
-    X_train = np.array(X_train).reshape(-1, 1)
 
     Xs = []
     for k in range(c):
         i = w + k*s
-        x = X_train[i-w:i]
+        x = X[i-w:i]
         Xs.append(x)
 
-    X_h = np.concatenate(Xs, axis=1)
+    return np.concatenate(Xs, axis=1)
 
-    print(X_h)
-    print(X_h.shape)
-
+# Dictionnary learning
+@memory.cache
+def dict_learning(X_h):
     dl = DictionaryLearning(n_components=10, alpha=1, verbose=2, random_state=0, n_jobs=4, max_iter=10)
-    dl.fit(X_h.T)
-
+    dl.fit(X_h)
     return dl
 
 
-dl = dict_learning(X_train, s, w)
+X_h = window_split(X_train, s, w)
+dl = dict_learning(X_h.T)
 
-print(dl.components_)
-print(dl.components_.shape)
-
+# Retrieve dictionnary
 D = dl.components_.T
+
+# print(dl.components_)
+# print(dl.components_.shape)
+
+# D = dl.components_.T
+
+X_h_test = window_split(X_test, s, w)
+X_pred_codes = dl.transform(X_h_test.T).T
+
+X_h_pred = D@X_pred_codes
+
+print(X_h_pred)
+print(X_h_pred.shape, X_h_test.shape)
