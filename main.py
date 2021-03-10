@@ -1,52 +1,20 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import TimeSeriesSplit
-# from sklearn.decomposition import DictionaryLearning
-# from joblib import Memory
-from dtaidistance import dtw
+"""Main script from which are executed the features of the project."""
+import argparse
 
-from datasets import BTCDataset
-from methods import DictionaryLearningMethod
+import src.benchmark as benchmark
 
 
-if __name__ == '__main__':
-    ds = BTCDataset()
+parser = argparse.ArgumentParser(description='MVA RP Data Challenge 2021')
+parser.add_argument('script', type=str, help='The subscript to run.')
+parser.add_argument('action', type=str, help='The action to run.')
+parser.add_argument('--ds', type=str, default='btc', help='The dataset.')
+parser.add_argument('--w', type=int, default=24, help='Windows width.')
+parser.add_argument('--s', type=int, default=12, help='Windows stride.')
 
-    ds.X.plot()
-    plt.yscale('log')
-    # plt.show()
+args = parser.parse_args()
 
-    cv = TimeSeriesSplit(n_splits=2, test_size=10000)
-    cv_split = cv.split(ds.X)
-    next(cv_split)
-    train_idx, test_idx = next(cv_split)
+# Map custom command to script
+mapping = {
+}
 
-    X_train = ds.X[train_idx]
-    X_test = ds.X[test_idx]
-
-    # X_train.plot()
-    # X_test.plot()
-    # plt.show()
-    s = 12*7
-    w = 24*7
-
-    estimator = DictionaryLearningMethod(width=w, stride=s)
-    estimator.fit(X_train)
-    X_pred_data = estimator.transform(X_test)
-
-    X_test = X_test[:X_pred_data.shape[0]]
-    X_pred = pd.Series(X_pred_data, index=X_test.index)
-
-    plt.figure()
-    X_pred.plot()
-    X_test.plot()
-    # plt.yscale('log')
-
-    MSE = np.linalg.norm(X_test.values - X_pred.values)
-
-    DTW = dtw.distance_fast(X_test.values, X_pred.values)
-    print(f'MSE: {MSE:.0f}')
-    print(f'DTW: {DTW:.0f}')
-
-    plt.show()
+locals()[mapping.get(args.script, args.script)].run(args)
