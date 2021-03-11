@@ -36,6 +36,11 @@ class Benchmark():
         return sys.getsizeof(x)
 
     @staticmethod
+    def codes_to_compressed_data(X_codes):
+        compressed_data = X_codes[~np.isclose(X_codes, 0)]
+        return compressed_data
+
+    @staticmethod
     def compression_rate(uncompressed_objects, compressed_objects):
         uncompressed_size = np.sum([Benchmark.size_of(x) for x in uncompressed_objects])
         compressed_size = np.sum([Benchmark.size_of(x) for x in compressed_objects])
@@ -53,7 +58,7 @@ class Benchmark():
             # method.estimator.set_params(**{'n_components': n})
             method.estimator.set_params(**{'transform_n_nonzero_coefs': n})
             method.fit(X_train)
-            X_pred_codes = method.transform_code(X_test)
+            X_pred_codes = method.transform_codes(X_test)
             return X_pred_codes
 
         for n in n_atoms:
@@ -62,13 +67,13 @@ class Benchmark():
             s = np.sum(np.isclose(X_pred_codes, 0))
             tot = np.sum(np.ones_like(X_pred_codes))
             print(f'{s}/{tot}')
-            compressed_data = X_pred_codes[~np.isclose(X_pred_codes, 0)]
+            # compressed_data = X_pred_codes[~np.isclose(X_pred_codes, 0)]
             rate = self.compression_rate([X_test], [compressed_data])
             rates.append(rate)
 
         return rates
 
-    def quality_vs_cr(self, compression_rates, n_atoms):
+    def quality_vs_cr(self, sparse_levels, n_atoms):
         X_train, X_test = self.data_split()
         method = clone(self.method)
 
@@ -77,23 +82,27 @@ class Benchmark():
             method.estimator.set_params(**{'transform_n_nonzero_coefs': cr,
                                            'n_components': n_atoms})
             method.fit(X_train)
-            X_pred = method.transform(X_test)
-            return X_pred
+            X_pred_codes = method.transform_codes(X_test)
+            X_pred = method.codes_to_signal(X_pred_codes)
+            compressed_data = self.codes_to_compressed_data(X_pred_codes)
+            rate = self.compression_rate([X_test], [compressed_data])
+            return X_pred, rate
 
         dists = []
-        for cr in compression_rates:
-            X_pred = cached_fit(cr, n_atoms)
+        rates = []
+        for level in sparse_levels:
+            X_pred, rate = cached_fit(level, n_atoms)
             DTW = dtw.distance_fast(np.array(X_test), np.array(X_pred))
             dists.append(DTW)
+            rates.append(rate)
 
-        return dists
+        return dists, rates
 
     ############ Plotting functions ############
     @staticmethod
     def get_or_create_ax(ax=None):
         if ax is None:
-            plt.figure()
-            ax = plt.gca()
+            _, ax = plt.subplots()
 
         return ax
 
@@ -104,14 +113,19 @@ class Benchmark():
         ax.set_xlabel('Number of atoms')
         ax.set_ylabel('Compression rate')
 
-    def plot_quality_vs_cr(self, compression_rates, n_atoms, ax=None):
+    def plot_quality_vs_cr(self, sparse_levels, n_atoms, ax=None):
         try:
-            compression_rates = np.linspace(1, n_atoms, compression_rates).astype(int)
+            sparse_levels = np.linspace(1, n_atoms, sparse_levels).astype(int)
         except AttributeError:
             pass
 
-        dists = self.quality_vs_cr(compression_rates, n_atoms)
+        dists, rates = self.quality_vs_cr(sparse_levels, n_atoms)
         ax = self.get_or_create_ax(ax)
-        ax.plot(compression_rates, dists)
+        twinx = ax.twinx()
+        ax.plot(sparse_levels, dists, color='tab:blue')
+        twinx.plot(sparse_levels, rates, color='tab:orange')
         ax.set_xlabel(r'$\tau$')
         ax.set_ylabel('DTW')
+        ax.tick_params(axis='y', labelcolor='tab:blue')
+        twinx.set_ylabel('Compression rate')
+        twinx.tick_params(axis='y', labelcolor='tab:orange')

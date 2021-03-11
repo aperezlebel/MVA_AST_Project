@@ -75,16 +75,18 @@ class DictionaryLearningMethod(BaseMethod):
 
         # self.estimator = estimator
 
-    def transform_code(self, X):
+    def transform_codes(self, X):
         X_h = self.window_split(X, self.stride, self.width)
         X_pred_codes = self.estimator.transform(X_h.T).T
         return X_pred_codes
 
-    def transform(self, X):
-        X_pred_codes = self.transform_code(X)
+    def codes_to_signal(self, X_codes):
         D = self.estimator.components_.T
-        X_h_pred = D@X_pred_codes
+        X_h = D@X_codes
+        X = self.window_merge(X_h, self.stride)
+        return X
 
-        X_pred = self.window_merge(X_h_pred, self.stride)
-
+    def transform(self, X):
+        X_pred_codes = self.transform_codes(X)
+        X_pred = self.codes_to_signal(X_pred_codes)
         return X_pred
