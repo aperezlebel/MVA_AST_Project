@@ -13,6 +13,6 @@ def run(args):
 
     ds = available_datasets[args.ds]()
     bm = Benchmark(method, ds.X)
-    bm.plot_compression_rate_evolution(n_atoms=[1, 2, 3, 4, 5]) #  n_atoms=[3, 5, 10, 20, 100])
+    bm.plot_quality_vs_cr(15, n_atoms=30) #  n_atoms=[3, 5, 10, 20, 100])
 
     plt.show()

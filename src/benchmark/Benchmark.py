@@ -6,6 +6,7 @@ import itertools
 from sklearn.model_selection import TimeSeriesSplit
 from joblib import Memory
 import matplotlib.pyplot as plt
+from dtaidistance import dtw
 
 from ..methods import BaseMethod
 
@@ -41,7 +42,6 @@ class Benchmark():
 
         return compressed_size/uncompressed_size
 
-    # @memory.cache
     def compression_rate_evolution(self, n_atoms):
         X_train, X_test = self.data_split()
         method = clone(self.method)
@@ -68,6 +68,26 @@ class Benchmark():
 
         return rates
 
+    def quality_vs_cr(self, compression_rates, n_atoms):
+        X_train, X_test = self.data_split()
+        method = clone(self.method)
+
+        @memory.cache
+        def cached_fit(cr, n_atoms):
+            method.estimator.set_params(**{'transform_n_nonzero_coefs': cr,
+                                           'n_components': n_atoms})
+            method.fit(X_train)
+            X_pred = method.transform(X_test)
+            return X_pred
+
+        dists = []
+        for cr in compression_rates:
+            X_pred = cached_fit(cr, n_atoms)
+            DTW = dtw.distance_fast(np.array(X_test), np.array(X_pred))
+            dists.append(DTW)
+
+        return dists
+
     ############ Plotting functions ############
     @staticmethod
     def get_or_create_ax(ax=None):
@@ -83,3 +103,15 @@ class Benchmark():
         ax.plot(n_atoms, rates)
         ax.set_xlabel('Number of atoms')
         ax.set_ylabel('Compression rate')
+
+    def plot_quality_vs_cr(self, compression_rates, n_atoms, ax=None):
+        try:
+            compression_rates = np.linspace(1, n_atoms, compression_rates).astype(int)
+        except AttributeError:
+            pass
+
+        dists = self.quality_vs_cr(compression_rates, n_atoms)
+        ax = self.get_or_create_ax(ax)
+        ax.plot(compression_rates, dists)
+        ax.set_xlabel(r'$\tau$')
+        ax.set_ylabel('DTW')
