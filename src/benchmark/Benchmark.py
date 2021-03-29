@@ -8,6 +8,7 @@ from joblib import Memory
 import matplotlib.pyplot as plt
 from dtaidistance import dtw
 from collections import defaultdict
+from tqdm import tqdm
 
 from ..methods import BaseMethod
 
@@ -28,7 +29,7 @@ memory = Memory('joblib_cache/', verbose=0)
 class Benchmark():
     """Implement functions to benchmark methods."""
 
-    def __init__(self, method, timeseries_list, cv=None):
+    def __init__(self, method, timeseries_list, n_splits=5, cv=None):
         assert isinstance(method, BaseMethod)
 
         self.method = method
@@ -36,9 +37,10 @@ class Benchmark():
             timeseries_list = [timeseries_list]
         self.timeseries_list = timeseries_list
         self.cv = cv
+        self.n_splits = n_splits
 
     def data_split(self, timeseries):
-        n_splits = 5
+        n_splits = self.n_splits
         cv = TimeSeriesSplit(n_splits=n_splits) if self.cv is None else self.cv
         cv_split = cv.split(timeseries)
         # train_idx, test_idx = next(itertools.islice(cv_split, n_splits-1, None))
@@ -47,10 +49,10 @@ class Benchmark():
 
     def cross_val_wrapper(self, f, *args, **kwargs):
         r1 = defaultdict(list)
-        for timeseries in self.timeseries_list:
+        for timeseries in tqdm(self.timeseries_list):
             r2 = defaultdict(list)
 
-            for X_train, X_test in self.data_split(timeseries):
+            for X_train, X_test in tqdm(self.data_split(timeseries), leave=False):
                 res = f(X_train, X_test, *args, **kwargs)
 
                 if not isinstance(res, tuple):
@@ -128,14 +130,15 @@ class Benchmark():
 
         return rates
 
-    def quality_vs_cr(self, sparse_levels, n_atoms, dist='dtw'):
-        X_train, X_test = self.data_split()
+    def quality_vs_cr(self, X_train, X_test, sparse_levels, n_atoms, dist='dtw'):
+        # X_train, X_test = self.data_split()
         method = clone(self.method)
 
-        @memory.cache
+        # @memory.cache
         def cached_fit(cr, n_atoms):
             method.estimator.set_params(**{'transform_n_nonzero_coefs': cr,
-                                           'n_components': n_atoms})
+                                           'n_components': n_atoms,
+                                           'verbose': 0,})
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             X_pred = method.codes_to_signal(X_pred_codes)
@@ -146,17 +149,19 @@ class Benchmark():
 
         dists = []
         rates = []
-        for level in sparse_levels:
+        for level in tqdm(sparse_levels, leave=False):
             X_pred, rate = cached_fit(level, n_atoms)
             a1 = np.array(X_test)
             a2 = np.array(X_pred)
+            assert a1.shape[0] >= a2.shape[0]
+            a1.resize(a2.shape)
             if dist == 'dtw':
-                dist = dtw.distance_fast(a1, a2)
+                d = dtw.distance_fast(a1, a2)
             elif dist == 'rmsre':
-                dist = np.sqrt(np.mean(np.square(np.divide(a1 - a2, a1))))
+                d = np.sqrt(np.mean(np.square(np.divide(a1 - a2, a1))))
             else:
                 raise ValueError(f'Unknown distance {dist}')
-            dists.append(dist)
+            dists.append(d)
             rates.append(rate)
 
         return dists, rates
@@ -190,11 +195,18 @@ class Benchmark():
         except AttributeError:
             pass
 
-        dists, rates = self.quality_vs_cr(sparse_levels, n_atoms, dist=dist)
+        # dists, rates = self.quality_vs_cr(sparse_levels, n_atoms, dist=dist)
+
+        f = self.quality_vs_cr
+        res = self.cross_val_wrapper(f, sparse_levels, n_atoms, dist=dist)
+        agg = self.aggregator(res)
+
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
-        ax.plot(sparse_levels, dists, color='tab:blue')
-        twinx.plot(sparse_levels, rates, color='tab:orange')
+        ax.plot(sparse_levels, agg[0][0], color='tab:blue')
+        twinx.plot(sparse_levels, agg[1][0], color='tab:orange')
+        # ax.plot(sparse_levels, dists, color='tab:blue')
+        # twinx.plot(sparse_levels, rates, color='tab:orange')
         ax.set_xlabel(r'Sparsity constraint $\tau$')
         ax.set_ylabel('DTW')
         ax.tick_params(axis='y', labelcolor='tab:blue')
