@@ -59,7 +59,6 @@ class Benchmark():
                 for i in range(len(res)):
                     r2[i].append(res[i])
 
-
             for k, v in r2.items():
                 r1[k].append(v)
 
@@ -67,6 +66,25 @@ class Benchmark():
             r1[k] = np.array(v)
 
         return tuple(r1.values())
+
+    @staticmethod
+    def aggregator(res):
+
+        def aggregate(r):
+            r = np.mean(r, axis=1)  # Average over folds
+            avg = np.mean(r, axis=0)  # Average over time series
+            std = np.std(r, axis=0)  # Std over time series
+
+            return avg, std
+
+        if not isinstance(res, tuple):
+            return aggregate(res)
+
+        aggregates = []
+        for r in res:
+            aggregates.append(aggregate(r))
+
+        return tuple(aggregates)
 
     @staticmethod
     def size_of(x):
