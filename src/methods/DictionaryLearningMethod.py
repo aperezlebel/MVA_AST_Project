@@ -17,7 +17,7 @@ class DictionaryLearningMethod(BaseMethod):
         self.stride = stride
         self.params = params
         self.estimator = DictionaryLearning(n_components=10, alpha=1, verbose=1,
-                                            random_state=0, n_jobs=4, max_iter=10)  #, transform_n_nonzero_coefs=1)
+                                            random_state=0, n_jobs=4, max_iter=20)  #, transform_n_nonzero_coefs=1)
 
     @staticmethod
     def window_split(X, s, w):
@@ -90,3 +90,6 @@ class DictionaryLearningMethod(BaseMethod):
         X_pred_codes = self.transform_codes(X)
         X_pred = self.codes_to_signal(X_pred_codes)
         return X_pred
+
+    def get_atoms(self):
+        return self.estimator.components_.T
