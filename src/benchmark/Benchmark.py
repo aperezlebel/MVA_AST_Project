@@ -227,7 +227,7 @@ class Benchmark():
                            color='tab:orange', alpha=0.3)
 
         ax.set_xlabel(r'Sparsity constraint $\tau$')
-        ax.set_ylabel('DTW')
+        ax.set_ylabel(f'{dist.upper()}')
         ax.tick_params(axis='y', labelcolor='tab:blue')
         twinx.set_ylabel('Compression rate')
         twinx.tick_params(axis='y', labelcolor='tab:orange')

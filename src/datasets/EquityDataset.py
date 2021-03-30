@@ -8,15 +8,20 @@ import numpy as np
 from .BaseDataset import BaseDataset, data_folder
 
 
+tickers = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA', 'FB', 'NFLX', 'PYPL', 'IBM']
+
+
 class EquityDataset(BaseDataset):
 
-    def __init__(self, root_folder=data_folder, tickers=['AAPL', 'MSFT', 'GOOGL'],
+    def __init__(self, root_folder=data_folder, tickers=tickers,
                  replace_existing=False, min_date='2000-01-01', max_date='2020-01-01'):
         self.root_folder = root_folder
         self.tickers = tickers
         self._data = None
         self._timeseries = None
         self.replace_existing = replace_existing
+        self.min_date = min_date
+        self.max_date = max_date
 
         api_key = os.environ.get('quandl_api_key', None)
         if api_key is None:
