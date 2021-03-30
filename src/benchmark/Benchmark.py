@@ -49,10 +49,13 @@ class Benchmark():
 
     def cross_val_wrapper(self, f, *args, **kwargs):
         r1 = defaultdict(list)
+
+        f = memory.cache(f)
+
         for timeseries in tqdm(self.timeseries_list):
             r2 = defaultdict(list)
 
-            for X_train, X_test in tqdm(self.data_split(timeseries), leave=False):
+            for X_train, X_test in tqdm(list(self.data_split(timeseries)), leave=False):
                 res = f(X_train, X_test, *args, **kwargs)
 
                 if not isinstance(res, tuple):
@@ -130,20 +133,22 @@ class Benchmark():
 
         return rates
 
-    def quality_vs_cr(self, X_train, X_test, sparse_levels, n_atoms, dist='dtw'):
+    @staticmethod
+    def quality_vs_cr(X_train, X_test, method, sparse_levels, n_atoms, dist='dtw'):
         # X_train, X_test = self.data_split()
-        method = clone(self.method)
+        method = clone(method)
 
         # @memory.cache
         def cached_fit(cr, n_atoms):
             method.estimator.set_params(**{'transform_n_nonzero_coefs': cr,
                                            'n_components': n_atoms,
-                                           'verbose': 0,})
+                                           'verbose': 0,
+                                           })
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             X_pred = method.codes_to_signal(X_pred_codes)
-            compressed_data = self.codes_to_compressed_data(X_pred_codes)
-            rate = self.compression_rate([X_test], [compressed_data])
+            compressed_data = Benchmark.codes_to_compressed_data(X_pred_codes)
+            rate = Benchmark.compression_rate([X_test], [compressed_data])
 
             return X_pred, rate
 
@@ -173,7 +178,6 @@ class Benchmark():
         method.fit(X_train)
         return method.get_atoms()
 
-
     ############ Plotting functions ############
     @staticmethod
     def get_or_create_ax(ax=None):
@@ -198,13 +202,22 @@ class Benchmark():
         # dists, rates = self.quality_vs_cr(sparse_levels, n_atoms, dist=dist)
 
         f = self.quality_vs_cr
-        res = self.cross_val_wrapper(f, sparse_levels, n_atoms, dist=dist)
+        res = self.cross_val_wrapper(f, self.method, sparse_levels, n_atoms, dist=dist)
         agg = self.aggregator(res)
+
+        dists_avg, dists_std = agg[0]
+        rates_avg, rates_std = agg[1]
 
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
-        ax.plot(sparse_levels, agg[0][0], color='tab:blue')
-        twinx.plot(sparse_levels, agg[1][0], color='tab:orange')
+        print(dists_std)
+        print(res[0].shape)
+        ax.plot(sparse_levels, dists_avg, color='tab:blue')
+        ax.fill_between(sparse_levels, dists_avg-2*dists_std, dists_avg+2*dists_std,
+                        color='tab:blue', alpha=0.3)
+        twinx.plot(sparse_levels, rates_avg, color='tab:orange')
+        twinx.fill_between(sparse_levels, rates_avg-2*rates_std, rates_avg+2*rates_std,
+                        color='tab:orange', alpha=0.3)
         # ax.plot(sparse_levels, dists, color='tab:blue')
         # twinx.plot(sparse_levels, rates, color='tab:orange')
         ax.set_xlabel(r'Sparsity constraint $\tau$')
