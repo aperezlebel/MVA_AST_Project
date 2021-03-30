@@ -27,6 +27,6 @@ class BTCDataset(BaseDataset):
         return self._data
 
     @property
-    def X(self):
+    def timeseries(self):
         df = self.data
         return df['Close']

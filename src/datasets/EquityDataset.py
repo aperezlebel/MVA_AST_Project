@@ -11,7 +11,7 @@ from .BaseDataset import BaseDataset, data_folder
 class EquityDataset(BaseDataset):
 
     def __init__(self, root_folder=data_folder, tickers=['AAPL', 'MSFT', 'GOOGL'],
-                 replace_existing=False):
+                 replace_existing=False, min_date='2000-01-01', max_date='2020-01-01'):
         self.root_folder = root_folder
         self.tickers = tickers
         self._data = None
@@ -36,7 +36,7 @@ class EquityDataset(BaseDataset):
             quandl.export_table('WIKI/PRICES',
                                 qopts={'columns': ['ticker', 'date', 'close']},
                                 ticker=self.tickers,
-                                date={'gte': '2000-01-01', 'lte': '2020-01-01'},
+                                date={'gte': self.min_date, 'lte': self.max_date},
                                 filename=zip_path)
 
         # Unzip downloaded table
@@ -68,11 +68,11 @@ class EquityDataset(BaseDataset):
         return self._data
 
     @property
-    def timeseries(self):
+    def timeseries_dict(self):
         if self._timeseries is None:
             self.load_data()
         return self._timeseries
 
     @property
-    def X(self):
-        return [np.array(ts) for ts in self.timeseries.values()]
+    def timeseries(self):
+        return [np.array(ts) for ts in self.timeseries_dict.values()]

@@ -11,5 +11,5 @@ class BaseDataset(ABC):
 
     @property
     @abstractmethod
-    def X(self):
+    def timeseries(self):
         pass

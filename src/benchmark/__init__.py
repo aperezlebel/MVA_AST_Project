@@ -13,7 +13,7 @@ def run(args):
     method = method(args.w, args.s)
 
     ds = available_datasets[args.ds]()
-    bm = Benchmark(method, [ds.X], n_splits=2)#, ds.X])
+    bm = Benchmark(method, ds.timeseries, n_splits=2)
     os.makedirs('figs', exist_ok=True)
 
     suffix = f'w_{args.w}-s_{args.s}'
@@ -46,7 +46,6 @@ def run(args):
 
         # print(type(res))
         res.plot('date', 'close')
-
 
     else:
         raise ValueError(f'Unkown action {args.action}')
