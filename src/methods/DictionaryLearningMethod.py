@@ -12,12 +12,26 @@ memory = Memory('joblib_cache/', verbose=0)
 class DictionaryLearningMethod(BaseMethod):
     """Implement the dict learning method of the paper using sklearn."""
 
-    def __init__(self, width=24, stride=12, **params):
+    def __init__(self, width=24, stride=12, n_components=10, alpha=1,
+                 verbose=1, random_state=0, n_jobs=4, max_iter=1):
         self.width = width
         self.stride = stride
-        self.params = params
-        self.estimator = DictionaryLearning(n_components=10, alpha=1, verbose=1,
-                                            random_state=0, n_jobs=4, max_iter=20)  #, transform_n_nonzero_coefs=1)
+
+        self.n_components = n_components
+        self.alpha = alpha
+        self.verbose = verbose
+        self.random_state = random_state
+        self.n_jobs = n_jobs
+        self.max_iter = max_iter
+
+        self.estimator = DictionaryLearning(
+            n_components=n_components,
+            alpha=alpha,
+            verbose=verbose,
+            random_state=random_state,
+            n_jobs=n_jobs,
+            max_iter=max_iter,
+        )
 
     @staticmethod
     def window_split(X, s, w):
@@ -61,19 +75,9 @@ class DictionaryLearningMethod(BaseMethod):
         x_hat = np.divide(np.sum(W, axis=0), N)
         return x_hat
 
-    # @memory.cache
-    # def dict_learning(X_h, **kwargs):
-    #     estimator = DictionaryLearning(**kwargs, verbose=2)
-    #     estimator.fit(X_h)
-    #     return estimator
-
     def fit(self, X, y=None):
         X_h = self.window_split(X, self.stride, self.width)
-        # estimator = self.dict_learning(X_h.T, n_components=10, alpha=1,
-        #                                random_state=0, n_jobs=4, max_iter=10)
         self.estimator.fit(X_h.T)
-
-        # self.estimator = estimator
 
     def transform_codes(self, X):
         X_h = self.window_split(X, self.stride, self.width)

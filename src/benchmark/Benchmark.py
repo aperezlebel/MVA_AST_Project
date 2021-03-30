@@ -43,7 +43,7 @@ class Benchmark():
         n_splits = self.n_splits
         cv = TimeSeriesSplit(n_splits=n_splits) if self.cv is None else self.cv
         cv_split = cv.split(timeseries)
-        # train_idx, test_idx = next(itertools.islice(cv_split, n_splits-1, None))
+
         for train_idx, test_idx in cv_split:
             yield timeseries[train_idx], timeseries[test_idx]
 
@@ -107,43 +107,38 @@ class Benchmark():
 
         return uncompressed_size/compressed_size
 
-    def compression_rate_evolution(self, n_atoms):
-        X_train, X_test = self.data_split()
-        method = clone(self.method)
+    @staticmethod
+    def compression_rate_evolution(X_train, X_test, method, n_atoms):
+        method = clone(method)
 
         rates = []
 
-        @memory.cache
+        # @memory.cache
         def cached_fit(n):
-            # method.estimator.set_params(**{'n_components': n})
-            method.estimator.set_params(**{'transform_n_nonzero_coefs': n})
+            method.estimator.set_params(**{'n_components': n})
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             return X_pred_codes
 
-        for n in n_atoms:
+        for n in tqdm(n_atoms, leave=False):
             X_pred_codes = cached_fit(n)
-            print(X_pred_codes.shape)
-            s = np.sum(np.isclose(X_pred_codes, 0))
-            tot = np.sum(np.ones_like(X_pred_codes))
-            print(f'{s}/{tot}')
-            # compressed_data = X_pred_codes[~np.isclose(X_pred_codes, 0)]
-            rate = self.compression_rate([X_test], [compressed_data])
+            compressed_data = Benchmark.codes_to_compressed_data(X_pred_codes)
+            rate = Benchmark.compression_rate([X_test], [compressed_data])
             rates.append(rate)
 
         return rates
 
     @staticmethod
     def quality_vs_cr(X_train, X_test, method, sparse_levels, n_atoms, dist='dtw'):
-        # X_train, X_test = self.data_split()
         method = clone(method)
 
         # @memory.cache
         def cached_fit(cr, n_atoms):
-            method.estimator.set_params(**{'transform_n_nonzero_coefs': cr,
-                                           'n_components': n_atoms,
-                                           'verbose': 0,
-                                           })
+            method.estimator.set_params(**{
+                'transform_n_nonzero_coefs': cr,
+                'n_components': n_atoms,
+                'verbose': 0,
+            })
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             X_pred = method.codes_to_signal(X_pred_codes)
@@ -156,23 +151,28 @@ class Benchmark():
         rates = []
         for level in tqdm(sparse_levels, leave=False):
             X_pred, rate = cached_fit(level, n_atoms)
+
+            # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
             a2 = np.array(X_pred)
             assert a1.shape[0] >= a2.shape[0]
             a1.resize(a2.shape)
+
+            # Compute distance
             if dist == 'dtw':
                 d = dtw.distance_fast(a1, a2)
             elif dist == 'rmsre':
                 d = np.sqrt(np.mean(np.square(np.divide(a1 - a2, a1))))
             else:
                 raise ValueError(f'Unknown distance {dist}')
+
             dists.append(d)
             rates.append(rate)
 
         return dists, rates
 
-    def get_atoms(self, n_atoms):
-        X_train, _ = self.data_split()
+    def get_atoms(self, n_atoms, timeseries):
+        X_train, _ = next(self.data_split(timeseries))
         method = clone(self.method)
         method.estimator.set_params(**{'n_components': n_atoms})
         method.fit(X_train)
@@ -187,9 +187,18 @@ class Benchmark():
         return ax
 
     def plot_compression_rate_evolution(self, n_atoms, ax=None):
-        rates = self.compression_rate_evolution(n_atoms)
+        f = self.compression_rate_evolution
+        res = self.cross_val_wrapper(f, self.method, n_atoms)
+        agg = self.aggregator(res)
+
+        rates_avg, rates_std = agg[0]
+
         ax = self.get_or_create_ax(ax)
-        ax.plot(n_atoms, rates)
+
+        ax.plot(n_atoms, rates_avg, color='tab:blue')
+        ax.fill_between(n_atoms, np.maximum(rates_avg-2*rates_std, 0),
+                        rates_avg+2*rates_std, color='tab:blue', alpha=0.3)
+
         ax.set_xlabel('Number of atoms')
         ax.set_ylabel('Compression rate')
 
@@ -224,14 +233,13 @@ class Benchmark():
         twinx.tick_params(axis='y', labelcolor='tab:orange')
 
     def plot_atoms(self, n_atoms):
-        # ax = self.get_or_create_ax(ax)
         fig, ax_arr = plt.subplots(
             nrows=int(np.ceil(n_atoms//3)),
             ncols=3,
             figsize=(20, 3 * (n_atoms // 3 + 1)),
         )
 
-        atoms = self.get_atoms(n_atoms)
+        atoms = self.get_atoms(n_atoms, self.timeseries_list[0])
 
         print(atoms.shape)
 

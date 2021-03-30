@@ -10,10 +10,18 @@ from ..datasets import available_datasets
 
 def run(args):
     method = available_methods[args.m]
-    method = method(args.w, args.s)
+    method_params = {
+        'n_components': 10,
+        'alpha': 1,
+        'verbose': 0,
+        'random_state': 0,
+        'n_jobs': 4,
+        'max_iter': 10,  #, transform_n_nonzero_coefs=1
+    }
+    method = method(args.w, args.s, **method_params)
 
     ds = available_datasets[args.ds]()
-    bm = Benchmark(method, ds.timeseries, n_splits=2)
+    bm = Benchmark(method, ds.timeseries, n_splits=args.splits)
     os.makedirs('figs', exist_ok=True)
 
     suffix = f'w_{args.w}-s_{args.s}'
@@ -22,8 +30,12 @@ def run(args):
         bm.plot_quality_vs_cr(3, n_atoms=10, dist='rmsre')  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
 
+    elif args.action == 'plot-cr':
+        bm.plot_compression_rate_evolution([2, 10])
+        plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
+
     elif args.action == 'plot-atoms':
-        n_atoms = 30
+        n_atoms = 6
         bm.plot_atoms(n_atoms=n_atoms)
         plt.savefig(f'figs/atoms-{suffix}-n_{n_atoms}.pdf', bbox_inches='tight')
 
@@ -51,5 +63,5 @@ def run(args):
         raise ValueError(f'Unkown action {args.action}')
 
     plt.savefig('figs/last_figure.pdf', bbox_inches='tight')
-    # plt.tight_layout()
+    plt.tight_layout()
     plt.show()
