@@ -4,6 +4,7 @@ data
 *_cache
 *.csv
 figs
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
