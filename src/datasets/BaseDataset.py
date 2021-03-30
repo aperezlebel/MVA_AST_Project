@@ -9,5 +9,7 @@ data_folder = os.path.abspath('src/data/')
 class BaseDataset(ABC):
     """Base abstract class for datasets."""
 
-    pass
-
+    @property
+    @abstractmethod
+    def X(self):
+        pass
