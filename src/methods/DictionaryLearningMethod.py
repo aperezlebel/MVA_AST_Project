@@ -38,6 +38,9 @@ class DictionaryLearningMethod(BaseMethod):
         """From a signal, create an array of overlapping windows."""
         X = np.array(X).reshape(-1, 1)
 
+        if w > X.shape[0]:
+            raise ValueError(f'Window width bigger than signal size ({w}>{X.shape[0]}).')
+
         n_h = X.shape[0]
         c = int((n_h - w)/s + 1)
 
