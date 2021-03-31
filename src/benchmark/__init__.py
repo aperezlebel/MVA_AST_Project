@@ -24,10 +24,10 @@ def run(args):
     bm = Benchmark(method, ds.timeseries, n_splits=args.splits)
     os.makedirs('figs', exist_ok=True)
 
-    suffix = f'w_{args.w}-s_{args.s}'
+    suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}'
 
     if args.action == 'plot-qcr':
-        bm.plot_quality_vs_cr(10, n_atoms=10, dist='rmsre')  #  n_atoms=[3, 5, 10, 20, 100])
+        bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
 
     elif args.action == 'plot-cr':
