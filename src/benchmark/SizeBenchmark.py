@@ -80,12 +80,12 @@ class SizeBenchmark(BaseBenchmark):
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
 
-        ax.plot(sparse_levels, dists_avg, color='tab:blue')
-        ax.fill_between(sparse_levels, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
+        ax.plot(widths, dists_avg, color='tab:blue')
+        ax.fill_between(widths, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
 
-        twinx.plot(sparse_levels, rates_avg, color='tab:orange')
-        twinx.fill_between(sparse_levels, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        twinx.plot(widths, rates_avg, color='tab:orange')
+        twinx.fill_between(widths, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
                            color='tab:orange', alpha=0.3)
 
         ax.set_xlabel(r'Width $w$')
