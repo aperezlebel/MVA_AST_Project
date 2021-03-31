@@ -33,7 +33,10 @@ def run(args):
     method = method(args.w, args.s, **method_params)
 
     ds = available_datasets[args.ds]()
-    # bm = Benchmark(method, ds.timeseries, n_splits=args.splits)
+    # bm = SparsityBenchmark(method, [ds.timeseries[0]], n_splits=args.splits)
+    # bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
+
+    # exit()
     os.makedirs('figs', exist_ok=True)
 
     suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}'
@@ -50,7 +53,7 @@ def run(args):
 
     elif args.action == 'widths':
         bm = SizeBenchmark(method, ds.timeseries, n_splits=args.splits)
-        bm.plot_quality_vs_width(widths=[1, 7, 30, 365], stride=1, n_atoms=None, dist=args.dist)
+        bm.plot_quality_vs_width(widths=np.linspace(1, 30, 5).astype(int), stride=1, n_atoms=None, dist=args.dist)
         plt.savefig(f'figs/quality_vs_widths-{suffix}.pdf', bbox_inches='tight')
 
     # elif args.action == 'plot-atoms':
@@ -82,5 +85,6 @@ def run(args):
         raise ValueError(f'Unkown action {args.action}')
 
     plt.savefig('figs/last_figure.pdf', bbox_inches='tight')
+    plt.savefig('figs/last_figure.png', bbox_inches='tight')
     plt.tight_layout()
     plt.show()

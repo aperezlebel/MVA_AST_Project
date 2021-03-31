@@ -101,12 +101,29 @@ class BaseBenchmark(ABC):
         compressed_data = X_codes[~np.isclose(X_codes, 0)]
         return compressed_data
 
-    @staticmethod
-    def compression_rate(uncompressed_objects, compressed_objects):
-        uncompressed_size = np.sum([BaseBenchmark.size_of(x) for x in uncompressed_objects])
-        compressed_size = np.sum([BaseBenchmark.size_of(x) for x in compressed_objects])
+    # @staticmethod
+    # def compression_rate(uncompressed_objects, compressed_objects):
+    #     uncompressed_size = np.sum([BaseBenchmark.size_of(x) for x in uncompressed_objects])
+    #     compressed_size = np.sum([BaseBenchmark.size_of(x) for x in compressed_objects])
 
-        return uncompressed_size/compressed_size
+    #     ratio = uncompressed_size/compressed_size
+
+    #     print(f'Raw: {uncompressed_size}')
+    #     print(f'Compressed: {compressed_size}')
+    #     print(f'Ratio: {ratio}')
+    #     return ratio
+
+    @staticmethod
+    def compression_rate(X_test, X_pred_codes):
+        uncompressed_size = X_test.size*X_test.itemsize
+        n_nonzero = np.sum(~np.isclose(X_pred_codes, 0))
+        compressed_size = n_nonzero*X_pred_codes.itemsize
+        ratio = uncompressed_size/compressed_size
+
+        print(f'Raw: {uncompressed_size}')
+        print(f'Compressed: {compressed_size}')
+        print(f'Ratio: {ratio}')
+        return ratio
 
     # def get_atoms(self, n_atoms, timeseries):
     #     X_train, _ = next(self.data_split(timeseries))

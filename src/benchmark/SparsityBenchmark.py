@@ -20,43 +20,6 @@ memory = Memory('joblib_cache/', verbose=0)
 class SparsityBenchmark(BaseBenchmark):
     """Implement functions to benchmark influence sparsity on the results."""
 
-    # @staticmethod
-    # def size_of(x):
-    #     return sys.getsizeof(x)
-
-    # @staticmethod
-    # def codes_to_compressed_data(X_codes):
-    #     compressed_data = X_codes[~np.isclose(X_codes, 0)]
-    #     return compressed_data
-
-    # @staticmethod
-    # def compression_rate(uncompressed_objects, compressed_objects):
-    #     uncompressed_size = np.sum([Benchmark.size_of(x) for x in uncompressed_objects])
-    #     compressed_size = np.sum([Benchmark.size_of(x) for x in compressed_objects])
-
-    #     return uncompressed_size/compressed_size
-
-    # @staticmethod
-    # def compression_rate_evolution(X_train, X_test, method, n_atoms):
-    #     method = clone(method)
-
-    #     rates = []
-
-    #     # @memory.cache
-    #     def cached_fit(n):
-    #         method.estimator.set_params(**{'n_components': n})
-    #         method.fit(X_train)
-    #         X_pred_codes = method.transform_codes(X_test)
-    #         return X_pred_codes
-
-    #     for n in tqdm(n_atoms, leave=False):
-    #         X_pred_codes = cached_fit(n)
-    #         compressed_data = Benchmark.codes_to_compressed_data(X_pred_codes)
-    #         rate = Benchmark.compression_rate([X_test], [compressed_data])
-    #         rates.append(rate)
-
-    #     return rates
-
     @staticmethod
     def quality_vs_cr(X_train, X_test, method, sparse_levels, n_atoms, dist='dtw'):
         method = clone(method)
@@ -71,15 +34,16 @@ class SparsityBenchmark(BaseBenchmark):
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             X_pred = method.codes_to_signal(X_pred_codes)
-            compressed_data = BaseBenchmark.codes_to_compressed_data(X_pred_codes)
-            rate = BaseBenchmark.compression_rate([X_test], [compressed_data])
+            rate = BaseBenchmark.compression_rate(X_test, X_pred_codes)
+            inv_rate = 1/rate
 
-            return X_pred, rate
+            return X_pred, rate, inv_rate
 
         dists = []
         rates = []
+        inv_rates = []
         for level in tqdm(sparse_levels, leave=False):
-            X_pred, rate = cached_fit(level, n_atoms)
+            X_pred, rate, inv_rate = cached_fit(level, n_atoms)
 
             # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
@@ -97,27 +61,12 @@ class SparsityBenchmark(BaseBenchmark):
 
             dists.append(d)
             rates.append(rate)
+            inv_rates.append(inv_rate)
 
-        return dists, rates
+        return dists, rates, inv_rates
 
 
     ############ Plotting functions ############
-
-    # def plot_compression_rate_evolution(self, n_atoms, ax=None):
-    #     f = self.compression_rate_evolution
-    #     res = self.cross_val_wrapper(f, self.method, n_atoms)
-    #     agg = self.aggregator(res)
-
-    #     rates_avg, rates_std = agg[0]
-
-    #     ax = self.get_or_create_ax(ax)
-
-    #     ax.plot(n_atoms, rates_avg, color='tab:blue')
-    #     ax.fill_between(n_atoms, np.maximum(rates_avg-2*rates_std, 0),
-    #                     rates_avg+2*rates_std, color='tab:blue', alpha=0.3)
-
-    #     ax.set_xlabel('Number of atoms')
-    #     ax.set_ylabel('Compression rate')
 
     def plot_quality_vs_cr(self, sparse_levels, n_atoms, dist='dtw', ax=None):
         try:
@@ -131,6 +80,7 @@ class SparsityBenchmark(BaseBenchmark):
 
         dists_avg, dists_std = agg[0]
         rates_avg, rates_std = agg[1]
+        inv_rates_avg, inv_rates_std = agg[2]
 
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
@@ -139,8 +89,12 @@ class SparsityBenchmark(BaseBenchmark):
         ax.fill_between(sparse_levels, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
 
-        twinx.plot(sparse_levels, rates_avg, color='tab:orange')
-        twinx.fill_between(sparse_levels, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        # twinx.plot(sparse_levels, rates_avg, color='tab:orange')
+        # twinx.fill_between(sparse_levels, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        #                    color='tab:orange', alpha=0.3)
+
+        twinx.plot(sparse_levels, inv_rates_avg, color='tab:orange')
+        twinx.fill_between(sparse_levels, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                            color='tab:orange', alpha=0.3)
 
         ax.set_xlabel(r'Sparsity constraint $\tau$')

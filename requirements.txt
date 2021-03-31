@@ -5,3 +5,4 @@ sklearn
 joblib
 dtaidistance
 tqdm
+quandl
