@@ -3,9 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import quandl
 
-from .Benchmark import Benchmark
+from .SparsityBenchmark import SparsityBenchmark
 from ..methods import available_methods
 from ..datasets import available_datasets
+
+
+plt.rcParams.update({
+    'text.usetex': True,
+    'mathtext.fontset': 'stix',
+    'font.family': 'STIXGeneral',
+    # 'font.size': 15,
+    'axes.labelsize': 15,
+    'legend.fontsize': 11,
+    'figure.figsize': (8,4.8),
+})
 
 
 def run(args):
@@ -21,23 +32,25 @@ def run(args):
     method = method(args.w, args.s, **method_params)
 
     ds = available_datasets[args.ds]()
-    bm = Benchmark(method, ds.timeseries, n_splits=args.splits)
+    # bm = Benchmark(method, ds.timeseries, n_splits=args.splits)
     os.makedirs('figs', exist_ok=True)
 
     suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}'
 
     if args.action == 'plot-qcr':
+        bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
 
     elif args.action == 'plot-cr':
+        bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_compression_rate_evolution([2, 10])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
 
-    elif args.action == 'plot-atoms':
-        n_atoms = 6
-        bm.plot_atoms(n_atoms=n_atoms)
-        plt.savefig(f'figs/atoms-{suffix}-n_{n_atoms}.pdf', bbox_inches='tight')
+    # elif args.action == 'plot-atoms':
+    #     n_atoms = 6
+    #     bm.plot_atoms(n_atoms=n_atoms)
+    #     plt.savefig(f'figs/atoms-{suffix}-n_{n_atoms}.pdf', bbox_inches='tight')
 
     elif args.action == 'test':
         def f(X_train, X_test):
