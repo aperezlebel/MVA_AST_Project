@@ -1,4 +1,4 @@
-"""Implement the Sparsity class."""
+"""Implement the SparsityBenchmark class."""
 import sys
 import numpy as np
 from sklearn.base import clone
@@ -71,8 +71,8 @@ class SparsityBenchmark(BaseBenchmark):
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
             X_pred = method.codes_to_signal(X_pred_codes)
-            compressed_data = SparsityBenchmark.codes_to_compressed_data(X_pred_codes)
-            rate = SparsityBenchmark.compression_rate([X_test], [compressed_data])
+            compressed_data = BaseBenchmark.codes_to_compressed_data(X_pred_codes)
+            rate = BaseBenchmark.compression_rate([X_test], [compressed_data])
 
             return X_pred, rate
 

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import quandl
 
 from .SparsityBenchmark import SparsityBenchmark
+from .SizeBenchmark import SizeBenchmark
 from ..methods import available_methods
 from ..datasets import available_datasets
 
@@ -24,7 +25,7 @@ def run(args):
     method_params = {
         'n_components': 10,
         'alpha': 1,
-        'verbose': 0,
+        'verbose': 1,
         'random_state': 0,
         'n_jobs': 4,
         'max_iter': 10,  #, transform_n_nonzero_coefs=1
@@ -37,15 +38,20 @@ def run(args):
 
     suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}'
 
-    if args.action == 'plot-qcr':
+    if args.action == 'qcr':
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
 
-    elif args.action == 'plot-cr':
+    elif args.action == 'cr':
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_compression_rate_evolution([2, 10])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
+
+    elif args.action == 'widths':
+        bm = SizeBenchmark(method, ds.timeseries, n_splits=args.splits)
+        bm.plot_quality_vs_width(widths=[1, 7, 30, 365], stride=1, n_atoms=None, dist=args.dist)
+        plt.savefig(f'figs/quality_vs_widths-{suffix}.pdf', bbox_inches='tight')
 
     # elif args.action == 'plot-atoms':
     #     n_atoms = 6
