@@ -24,12 +24,12 @@ plt.rcParams.update({
 def run(args):
     method = available_methods[args.m]
     method_params = {
-        'n_components': 10,
+        'n_components': 5,
         'alpha': 1,
         'verbose': 1,
         'random_state': 0,
         'n_jobs': 4,
-        'max_iter': 10,  #, transform_n_nonzero_coefs=1
+        'max_iter': args.iter,  #, transform_n_nonzero_coefs=1
     }
     method = method(args.w, args.s, **method_params)
 
@@ -40,17 +40,19 @@ def run(args):
     # exit()
     os.makedirs('figs', exist_ok=True)
 
-    suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}'
+    suffix = f'w_{args.w}-s_{args.s}-splits_{args.splits}-ds_{ds.__class__.__name__}-dist_{args.dist}-iter_{args.iter}'
 
     if args.action == 'qcr':
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
-        bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
+        bm.plot_quality_vs_cr(5, n_atoms=5, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
+        plt.savefig(f'figs/quality_vs_cr-{suffix}.png', bbox_inches='tight')
 
     elif args.action == 'qts':
         bm = TrainSizeBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_quality_vs_trainsize(dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_trainsize-{suffix}.pdf', bbox_inches='tight')
+        plt.savefig(f'figs/quality_vs_trainsize-{suffix}.png', bbox_inches='tight')
 
     elif args.action == 'cr':
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)

@@ -61,7 +61,11 @@ class TrainSizeBenchmark(BaseBenchmark):
         res = self.cross_val_wrapper(f, self.method, dist=dist)
         agg = self.aggregator(res, avg_on_fold=False)
 
-        sizes, _ = agg[0]
+        print(res[0])
+
+        # sizes, _ = agg[0]
+        n = agg[0][0].shape[0]
+        sizes = np.cumsum(np.ones(n)/n)
         dists_avg, dists_std = agg[1]
         rates_avg, rates_std = agg[2]
         inv_rates_avg, inv_rates_std = agg[3]
@@ -76,20 +80,22 @@ class TrainSizeBenchmark(BaseBenchmark):
         ax = self.get_or_create_ax(ax)
         # twinx = ax.twinx()
 
-        ax.plot(sizes, dists_avg, color='tab:blue')
+        ax.plot(sizes, dists_avg, color='tab:blue', label='Mean')
         ax.fill_between(sizes, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
-                        color='tab:blue', alpha=0.3)
+                        color='tab:blue', alpha=0.15, label='$[(\mu-2\sigma)^{+}, \mu+2\sigma]$')
 
         # twinx.plot(sparse_levels, rates_avg, color='tab:orange')
         # twinx.fill_between(sparse_levels, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
-        #                    color='tab:orange', alpha=0.3)
+        #                    color='tab:orange', alpha=0.15)
 
         # twinx.plot(sizes, inv_rates_avg, color='tab:orange')
         # twinx.fill_between(sizes, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
-        #                    color='tab:orange', alpha=0.3)
+        #                    color='tab:orange', alpha=0.15)
 
-        ax.set_xlabel(r'Size of the training set')
+        ax.set_xlabel(r'Relative size of the training set')
         ax.set_ylabel(f'{dist.upper()}')
         ax.tick_params(axis='y', labelcolor='tab:blue')
         # twinx.set_ylabel('Compression rate')
         # twinx.tick_params(axis='y', labelcolor='tab:orange')
+
+        ax.legend(loc='upper left')
