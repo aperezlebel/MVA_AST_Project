@@ -1,20 +1,10 @@
 """Implement the SparsityBenchmark class."""
-import sys
 import numpy as np
-from sklearn.base import clone
-import itertools
-from sklearn.model_selection import TimeSeriesSplit
-from joblib import Memory
-import matplotlib.pyplot as plt
 from dtaidistance import dtw
-from collections import defaultdict
+from sklearn.base import clone
 from tqdm import tqdm
 
-from ..methods import BaseMethod
 from .BaseBenchmark import BaseBenchmark
-
-
-memory = Memory('joblib_cache/', verbose=0)
 
 
 class SparsityBenchmark(BaseBenchmark):
@@ -24,8 +14,7 @@ class SparsityBenchmark(BaseBenchmark):
     def quality_vs_cr(X_train, X_test, method, sparse_levels, n_atoms, dist='dtw'):
         method = clone(method)
 
-        # @memory.cache
-        def cached_fit(cr, n_atoms):
+        def fit(cr, n_atoms):
             method.estimator.set_params(**{
                 'transform_n_nonzero_coefs': cr,
                 'n_components': n_atoms,
@@ -43,7 +32,7 @@ class SparsityBenchmark(BaseBenchmark):
         rates = []
         inv_rates = []
         for level in tqdm(sparse_levels, leave=False):
-            X_pred, rate, inv_rate = cached_fit(level, n_atoms)
+            X_pred, rate, inv_rate = fit(level, n_atoms)
 
             # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
@@ -64,9 +53,6 @@ class SparsityBenchmark(BaseBenchmark):
             inv_rates.append(inv_rate)
 
         return dists, rates, inv_rates
-
-
-    ############ Plotting functions ############
 
     def plot_quality_vs_cr(self, sparse_levels, n_atoms, dist='dtw', ax=None):
         try:
@@ -89,10 +75,6 @@ class SparsityBenchmark(BaseBenchmark):
         f1 = ax.fill_between(sparse_levels, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                              color='tab:blue', alpha=0.15, label='$[(\mu-2\sigma)^{+}, \mu+2\sigma]$')
 
-        # twinx.plot(sparse_levels, rates_avg, color='tab:orange')
-        # twinx.fill_between(sparse_levels, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
-        #                    color='tab:orange', alpha=0.15)
-
         l2, = twinx.plot(sparse_levels, inv_rates_avg, color='tab:orange', label='Mean')
         f2 = twinx.fill_between(sparse_levels, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                                 color='tab:orange', alpha=0.15, label='$[(\mu-2\sigma)^{+}, \mu+2\sigma]$')
@@ -103,7 +85,6 @@ class SparsityBenchmark(BaseBenchmark):
         twinx.set_ylabel('Compression rate')
         twinx.tick_params(axis='y', labelcolor='tab:orange')
 
-        # added these three lines
         lns = [l1, l2, f1, f2]
         labs = [l.get_label() for l in lns]
         ax.legend(lns, labs, loc='upper left')

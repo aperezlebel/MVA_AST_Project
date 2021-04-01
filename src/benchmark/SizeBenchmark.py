@@ -1,20 +1,10 @@
 """Implement the SizeBenchmark class."""
-import sys
 import numpy as np
-from sklearn.base import clone
-import itertools
-from sklearn.model_selection import TimeSeriesSplit
-from joblib import Memory
-import matplotlib.pyplot as plt
 from dtaidistance import dtw
-from collections import defaultdict
+from sklearn.base import clone
 from tqdm import tqdm
 
-from ..methods import BaseMethod
 from .BaseBenchmark import BaseBenchmark
-
-
-memory = Memory('joblib_cache/', verbose=0)
 
 
 class SizeBenchmark(BaseBenchmark):
@@ -24,7 +14,6 @@ class SizeBenchmark(BaseBenchmark):
     def quality_vs_width(X_train, X_test, method, widths, stride, n_atoms, dist='dtw'):
         method = clone(method)
 
-        # @memory.cache
         def fit(width):
             method.set_params(**{
                 'width': width,
@@ -68,9 +57,6 @@ class SizeBenchmark(BaseBenchmark):
 
         return dists, rates, inv_rates
 
-
-    ############ Plotting functions ############
-
     def plot_quality_vs_width(self, widths, stride, n_atoms, dist='dtw', ax=None):
         f = self.quality_vs_width
         res = self.cross_val_wrapper(f, self.method, widths, stride, n_atoms, dist=dist)
@@ -86,10 +72,6 @@ class SizeBenchmark(BaseBenchmark):
         ax.plot(widths, dists_avg, color='tab:blue')
         ax.fill_between(widths, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
-
-        # twinx.plot(widths, rates_avg, color='tab:orange')
-        # twinx.fill_between(widths, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
-        #                    color='tab:orange', alpha=0.3)
 
         twinx.plot(widths, inv_rates_avg, color='tab:orange')
         twinx.fill_between(widths, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,

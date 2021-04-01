@@ -1,29 +1,16 @@
 """Implement the Benchmark class."""
 import sys
-import numpy as np
-from sklearn.base import clone
-import itertools
-from sklearn.model_selection import TimeSeriesSplit
-from joblib import Memory
-import matplotlib.pyplot as plt
-from dtaidistance import dtw
-from collections import defaultdict
-from tqdm import tqdm
 from abc import ABC
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
+from joblib import Memory
+from sklearn.model_selection import TimeSeriesSplit
+from tqdm import tqdm
 
 from ..methods import BaseMethod
 
-
-plt.rcParams.update({
-    'text.usetex': True,
-    'mathtext.fontset': 'stix',
-    'font.family': 'STIXGeneral',
-    # 'font.size': 15,
-    'axes.labelsize': 15,
-    'legend.fontsize': 11,
-    'figure.figsize': (8,4.8),
-})
-figsize = (10, 6)
 memory = Memory('joblib_cache/', verbose=0)
 
 
@@ -103,18 +90,6 @@ class BaseBenchmark(ABC):
         compressed_data = X_codes[~np.isclose(X_codes, 0)]
         return compressed_data
 
-    # @staticmethod
-    # def compression_rate(uncompressed_objects, compressed_objects):
-    #     uncompressed_size = np.sum([BaseBenchmark.size_of(x) for x in uncompressed_objects])
-    #     compressed_size = np.sum([BaseBenchmark.size_of(x) for x in compressed_objects])
-
-    #     ratio = uncompressed_size/compressed_size
-
-    #     print(f'Raw: {uncompressed_size}')
-    #     print(f'Compressed: {compressed_size}')
-    #     print(f'Ratio: {ratio}')
-    #     return ratio
-
     @staticmethod
     def compression_rate(X_test, X_pred_codes):
         uncompressed_size = X_test.size*X_test.itemsize
@@ -122,41 +97,11 @@ class BaseBenchmark(ABC):
         compressed_size = n_nonzero*X_pred_codes.itemsize
         ratio = uncompressed_size/compressed_size
 
-        # print(f'Raw: {uncompressed_size}')
-        # print(f'Compressed: {compressed_size}')
-        # print(f'Ratio: {ratio}')
         return ratio
 
-    # def get_atoms(self, n_atoms, timeseries):
-    #     X_train, _ = next(self.data_split(timeseries))
-    #     method = clone(self.method)
-    #     method.estimator.set_params(**{'n_components': n_atoms})
-    #     method.fit(X_train)
-    #     return method.get_atoms()
-
-    ############ Plotting functions ############
     @staticmethod
     def get_or_create_ax(ax=None):
         if ax is None:
             _, ax = plt.subplots()
 
         return ax
-
-    # def plot_atoms(self, n_atoms):
-    #     fig, ax_arr = plt.subplots(
-    #         nrows=int(np.ceil(n_atoms//3)),
-    #         ncols=3,
-    #         figsize=(20, 3 * (n_atoms // 3 + 1)),
-    #     )
-
-    #     atoms = self.get_atoms(n_atoms, self.timeseries_list[0])
-
-    #     print(atoms.shape)
-
-    #     for (ind, (component, ax)) in enumerate(
-    #         zip(atoms.T, ax_arr.flatten())
-    #     ):
-    #         ax.plot(component)
-    #         ax.set_xlim(0, component.size)
-    #         ax.set_ylim(-2, 2)
-    #         ax.set_title(f"Component n°{ind+1}")
