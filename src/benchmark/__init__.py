@@ -26,7 +26,7 @@ def run(args):
     """Run the desired experiment."""
     method = available_methods[args.m]
     method_params = {
-        'n_components': 5,
+        'n_components': args.atoms,
         'alpha': 1,
         'verbose': 1,
         'random_state': 0,
@@ -47,23 +47,20 @@ def run(args):
 
     # Figure 2
     elif args.action == 'widths':
-        method = DictionaryLearningMethod(width=24, stride=12, n_components=10, alpha=1, verbose=1, random_state=0, n_jobs=4, max_iter=10)
         bm = SizeBenchmark(method, ds.timeseries)
-        bm.plot_quality_vs_width(widths=[1, 5, 10, 15, 30, 50, 75, 100], stride=10, n_atoms=10, dist='dtw')
+        bm.plot_quality_vs_width(widths=[1, 5, 10, 15, 30, 50, 75, 100], stride=10, n_atoms=10, dist=args.dist)
         plt.savefig(f'figs/quality_vs_widths-{suffix}.pdf', bbox_inches='tight')
 
     # Figure 2
     elif args.action == 'strides':
-        method = DictionaryLearningMethod(width=50, stride=10, n_components=10, alpha=1, verbose=1, random_state=0, n_jobs=4, max_iter=10)
         bm = StrideBenchmark(method, ds.timeseries)
-        bm.plot_quality_vs_stride(strides=[1, 5, 10, 50, 100], n_atoms=10, dist='dtw')
+        bm.plot_quality_vs_stride(strides=[1, 5, 10, 50, 100], n_atoms=10, dist=args.dist)
         plt.savefig(f'figs/quality_vs_strides-{suffix}.pdf', bbox_inches='tight')
 
     # Figure 3
     elif args.action == 'atoms':
-        method = DictionaryLearningMethod(width=50, stride=10, n_components=10, alpha=1, verbose=1, random_state=0, n_jobs=4, max_iter=10)
         bm = NumAtomsBenchmark(method, ds.timeseries)
-        bm.plot_quality_vs_numatoms(n_atoms=[1, 5, 10, 50, 100], dist='dtw')
+        bm.plot_quality_vs_numatoms(n_atoms=[1, 5, 10, 50, 100], dist=args.dist)
         plt.savefig(f'figs/quality_vs_atoms-{suffix}.pdf', bbox_inches='tight')
 
     # Figure 4

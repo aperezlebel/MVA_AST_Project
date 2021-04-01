@@ -48,8 +48,13 @@ python main.py benchmark qts --splits 10 --dist dtw --ds ety --w 14 --s 14 --ite
 
 
 **Figure 2: Influence of the width and stride**
+a. Width
 ```python
-
+python main.py benchmark widths --splits 5 --dist dtw --ds ety --s 10 --iter 10
+```
+b. Stride
+```python
+python main.py benchmark strides --splits 5 --dist dtw --ds ety --s 10 --iter 10
 ```
 
 
