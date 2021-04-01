@@ -7,6 +7,7 @@ import numpy as np
 from ..datasets import available_datasets
 from ..methods import available_methods
 from .SizeBenchmark import SizeBenchmark
+from .StrideBenchmark import StrideBenchmark
 from .SparsityBenchmark import SparsityBenchmark
 from .TrainSizeBenchmark import TrainSizeBenchmark
 
