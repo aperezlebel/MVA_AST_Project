@@ -17,8 +17,4 @@ parser.add_argument('--iter', type=int, default=10, help='Number of iterations.'
 
 args = parser.parse_args()
 
-# Map custom command to script
-mapping = {
-}
-
-locals()[mapping.get(args.script, args.script)].run(args)
+locals()[args.script].run(args)

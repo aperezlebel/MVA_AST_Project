@@ -1,26 +1,33 @@
-"""Implement the SizeBenchmark class."""
+"""Implement the NumAtomsBenchmark class."""
+import sys
 import numpy as np
-from dtaidistance import dtw
 from sklearn.base import clone
+import itertools
+from sklearn.model_selection import TimeSeriesSplit
+from joblib import Memory
+import matplotlib.pyplot as plt
+from dtaidistance import dtw
+from collections import defaultdict
 from tqdm import tqdm
 
+from ..methods import BaseMethod
 from .BaseBenchmark import BaseBenchmark
 
 
-class SizeBenchmark(BaseBenchmark):
-    """Implement functions to benchmark influence of width and stride."""
+memory = Memory('joblib_cache/', verbose=0)
+
+
+class NumAtomsBenchmark(BaseBenchmark):
+    """Implement functions to benchmark influence of the number of atoms."""
 
     @staticmethod
-    def quality_vs_width(X_train, X_test, method, widths, stride, n_atoms, dist='dtw'):
+    def quality_vs_numatoms(X_train, X_test, method, n_atoms, dist='dtw'):
         method = clone(method)
 
-        def fit(width):
-            method.set_params(**{
-                'width': width,
-                'stride': stride,
-            })
+        # @memory.cache
+        def fit(num_atoms):
             method.estimator.set_params(**{
-                'n_components': n_atoms,
+                'n_components': num_atoms,
                 'verbose': 0,
             })
             method.fit(X_train)
@@ -34,8 +41,8 @@ class SizeBenchmark(BaseBenchmark):
         dists = []
         rates = []
         inv_rates = []
-        for width in tqdm(widths, leave=False):
-            X_pred, rate, inv_rate = fit(width)
+        for num_atoms in n_atoms:
+            X_pred, rate, inv_rate = fit(num_atoms)
 
             # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
@@ -57,9 +64,12 @@ class SizeBenchmark(BaseBenchmark):
 
         return dists, rates, inv_rates
 
-    def plot_quality_vs_width(self, widths, stride, n_atoms, dist='dtw', ax=None):
-        f = self.quality_vs_width
-        res = self.cross_val_wrapper(f, self.method, widths, stride, n_atoms, dist=dist)
+
+    ############ Plotting functions ############
+
+    def plot_quality_vs_numatoms(self, n_atoms, dist='dtw', ax=None):
+        f = self.quality_vs_numatoms
+        res = self.cross_val_wrapper(f, self.method, n_atoms, dist=dist)
         agg = self.aggregator(res)
 
         dists_avg, dists_std = agg[0]
@@ -69,15 +79,19 @@ class SizeBenchmark(BaseBenchmark):
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
 
-        ax.plot(widths, dists_avg, color='tab:blue')
-        ax.fill_between(widths, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
+        ax.plot(n_atoms, dists_avg, color='tab:blue')
+        ax.fill_between(n_atoms, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
 
-        twinx.plot(widths, inv_rates_avg, color='tab:orange')
-        twinx.fill_between(widths, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
+        # twinx.plot(n_atoms, rates_avg, color='tab:orange')
+        # twinx.fill_between(n_atoms, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        #                    color='tab:orange', alpha=0.3)
+
+        twinx.plot(n_atoms, inv_rates_avg, color='tab:orange')
+        twinx.fill_between(n_atoms, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                            color='tab:orange', alpha=0.3)
 
-        ax.set_xlabel(r'Width $w$')
+        ax.set_xlabel(r'Number of atoms')
         ax.set_ylabel(f'{dist.upper()}')
         ax.tick_params(axis='y', labelcolor='tab:blue')
         twinx.set_ylabel('Compression rate')

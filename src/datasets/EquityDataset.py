@@ -1,9 +1,10 @@
-"""Implement the BTCDataset class."""
+"""Implement the EquityDataset class."""
 import os
+import zipfile
+
+import numpy as np
 import pandas as pd
 import quandl
-import zipfile
-import numpy as np
 
 from .BaseDataset import BaseDataset, data_folder
 
@@ -12,6 +13,7 @@ tickers = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA', 'FB', 'NFLX', 'PYPL'
 
 
 class EquityDataset(BaseDataset):
+    """Use Quandl to load financial timeseries."""
 
     def __init__(self, root_folder=data_folder, tickers=tickers,
                  replace_existing=False, min_date='2000-01-01', max_date='2020-01-01'):
@@ -24,11 +26,6 @@ class EquityDataset(BaseDataset):
         self.max_date = max_date
 
         api_key = os.environ.get('quandl_api_key', None)
-        if api_key is None:
-            raise EnvironmentError('You must specify a Quandl API key in your environment '
-                             'as variable "quandl_api_key" to use this dataset.\n'
-                             'Use command "export quandl_api_key=\'YOUR_API_KEY\'"')
-        quandl.ApiConfig.api_key = api_key
 
     def load_data(self):
         folder = os.path.join(self.root_folder, 'financial/equities/')
@@ -38,6 +35,11 @@ class EquityDataset(BaseDataset):
         # Download table
         if not os.path.exists(zip_path) or self.replace_existing:
             print('Downloading dataset...')
+            if api_key is None:
+                raise EnvironmentError('You must specify a Quandl API key in your environment '
+                                       'as variable "quandl_api_key" to use this dataset.\n'
+                                       'Use command "export quandl_api_key=\'YOUR_API_KEY\'"')
+            quandl.ApiConfig.api_key = api_key
             quandl.export_table('WIKI/PRICES',
                                 qopts={'columns': ['ticker', 'date', 'close']},
                                 ticker=self.tickers,
