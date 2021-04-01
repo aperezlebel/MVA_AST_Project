@@ -21,7 +21,7 @@ class NumAtomsBenchmark(BaseBenchmark):
     """Implement functions to benchmark influence of the number of atoms."""
 
     @staticmethod
-    def quality_vs_atoms(X_train, X_test, method, n_atoms, dist='dtw'):
+    def quality_vs_numatoms(X_train, X_test, method, n_atoms, dist='dtw'):
         method = clone(method)
 
         # @memory.cache
@@ -68,7 +68,7 @@ class NumAtomsBenchmark(BaseBenchmark):
     ############ Plotting functions ############
 
     def plot_quality_vs_width(self, n_atoms, dist='dtw', ax=None):
-        f = self.quality_vs_width
+        f = self.quality_vs_numatoms
         res = self.cross_val_wrapper(f, self.method, n_atoms, dist=dist)
         agg = self.aggregator(res)
 
