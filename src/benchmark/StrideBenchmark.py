@@ -1,22 +1,25 @@
-"""Implement the NumAtomsBenchmark class."""
+"""Implement the StrideBenchmark class."""
 import numpy as np
-from dtaidistance import dtw
 from sklearn.base import clone
+from dtaidistance import dtw
 from tqdm import tqdm
 
 from .BaseBenchmark import BaseBenchmark
 
 
-class NumAtomsBenchmark(BaseBenchmark):
-    """Implement functions to benchmark influence of the number of atoms."""
+class StrideBenchmark(BaseBenchmark):
+    """Implement functions to benchmark influence of the stride."""
 
     @staticmethod
-    def quality_vs_numatoms(X_train, X_test, method, n_atoms, dist='dtw'):
+    def quality_vs_stride(X_train, X_test, method, strides, n_atoms, dist='dtw'):
         method = clone(method)
 
-        def fit(num_atoms):
+        def fit(stride):
+            method.set_params(**{
+                'stride': stride,
+            })
             method.estimator.set_params(**{
-                'n_components': num_atoms,
+                'n_components': n_atoms,
                 'verbose': 0,
             })
             method.fit(X_train)
@@ -30,8 +33,8 @@ class NumAtomsBenchmark(BaseBenchmark):
         dists = []
         rates = []
         inv_rates = []
-        for num_atoms in tqdm(n_atoms, leave=False):
-            X_pred, rate, inv_rate = fit(num_atoms)
+        for stride in tqdm(strides, leave=False):
+            X_pred, rate, inv_rate = fit(stride)
 
             # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
@@ -53,9 +56,9 @@ class NumAtomsBenchmark(BaseBenchmark):
 
         return dists, rates, inv_rates
 
-    def plot_quality_vs_numatoms(self, n_atoms, dist='dtw', ax=None):
-        f = self.quality_vs_numatoms
-        res = self.cross_val_wrapper(f, self.method, n_atoms, dist=dist)
+    def plot_quality_vs_stride(self, strides, n_atoms, dist='dtw', ax=None):
+        f = self.quality_vs_stride
+        res = self.cross_val_wrapper(f, self.method, strides, n_atoms, dist=dist)
         agg = self.aggregator(res)
 
         dists_avg, dists_std = agg[0]
@@ -65,15 +68,15 @@ class NumAtomsBenchmark(BaseBenchmark):
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
 
-        ax.plot(n_atoms, dists_avg, color='tab:blue')
-        ax.fill_between(n_atoms, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
+        ax.plot(strides, dists_avg, color='tab:blue')
+        ax.fill_between(strides, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
 
-        twinx.plot(n_atoms, inv_rates_avg, color='tab:orange')
-        twinx.fill_between(n_atoms, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
+        twinx.plot(strides, inv_rates_avg, color='tab:orange')
+        twinx.fill_between(strides, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                            color='tab:orange', alpha=0.3)
 
-        ax.set_xlabel(r'Number of atoms')
+        ax.set_xlabel(r'Stride $s$')
         ax.set_ylabel(f'{dist.upper()}')
         ax.tick_params(axis='y', labelcolor='tab:blue')
         twinx.set_ylabel('Compression rate')
