@@ -10,6 +10,7 @@ from .SizeBenchmark import SizeBenchmark
 from .StrideBenchmark import StrideBenchmark
 from .SparsityBenchmark import SparsityBenchmark
 from .TrainSizeBenchmark import TrainSizeBenchmark
+from .NumAtomsBenchmark import NumAtomsBenchmark
 
 
 plt.rcParams.update({
