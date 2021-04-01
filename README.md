@@ -60,7 +60,7 @@ python main.py benchmark strides --splits 5 --dist dtw --ds ety --s 10 --iter 10
 
 **Figure 3: Influence of the number of atoms**
 ```python
-
+python main.py benchmark atoms --splits 5 --dist dtw --ds ety --w 50 --s 10 --iter 10
 ```
 
 
