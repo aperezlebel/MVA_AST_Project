@@ -36,9 +36,7 @@ class SizeBenchmark(BaseBenchmark):
             })
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
-            X_pred = method.codes_to_signal(X_pred_codes)
-            compressed_data = BaseBenchmark.codes_to_compressed_data(X_pred_codes)
-            rate = BaseBenchmark.compression_rate([X_test], [compressed_data])
+            rate = BaseBenchmark.compression_rate(X_test, X_pred_codes)
 
             return X_pred, rate
 
