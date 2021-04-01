@@ -54,7 +54,7 @@ python main.py benchmark widths --splits 5 --dist dtw --ds ety --s 10 --iter 10
 ```
 b. Stride
 ```python
-python main.py benchmark strides --splits 5 --dist dtw --ds ety --s 10 --iter 10
+python main.py benchmark strides --splits 5 --dist dtw --ds ety --w 50 --iter 10
 ```
 
 

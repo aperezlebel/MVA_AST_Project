@@ -55,7 +55,7 @@ def run(args):
     # Figure 2
     elif args.action == 'strides':
         bm = StrideBenchmark(method, ds.timeseries)
-        bm.plot_quality_vs_stride(strides=[1, 5, 10, 50, 100], n_atoms=10, dist=args.dist)
+        bm.plot_quality_vs_stride(strides=[1, 5, 10, 50], n_atoms=10, dist=args.dist)
         plt.savefig(f'figs/quality_vs_strides-{suffix}.pdf', bbox_inches='tight')
 
     # Figure 3
