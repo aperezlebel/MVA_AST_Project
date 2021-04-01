@@ -74,10 +74,12 @@ class BaseBenchmark(ABC):
         return tuple(r1.values())
 
     @staticmethod
-    def aggregator(res):
+    def aggregator(res, avg_on_fold=True):
 
         def aggregate(r):
-            r = np.mean(r, axis=1)  # Average over folds
+            if avg_on_fold:
+                r = np.mean(r, axis=1)  # Average over folds
+
             avg = np.mean(r, axis=0)  # Average over time series
             std = np.std(r, axis=0)  # Std over time series
 
@@ -120,9 +122,9 @@ class BaseBenchmark(ABC):
         compressed_size = n_nonzero*X_pred_codes.itemsize
         ratio = uncompressed_size/compressed_size
 
-        print(f'Raw: {uncompressed_size}')
-        print(f'Compressed: {compressed_size}')
-        print(f'Ratio: {ratio}')
+        # print(f'Raw: {uncompressed_size}')
+        # print(f'Compressed: {compressed_size}')
+        # print(f'Ratio: {ratio}')
         return ratio
 
     # def get_atoms(self, n_atoms, timeseries):

@@ -5,6 +5,7 @@ import quandl
 
 from .SparsityBenchmark import SparsityBenchmark
 from .SizeBenchmark import SizeBenchmark
+from .TrainSizeBenchmark import TrainSizeBenchmark
 from ..methods import available_methods
 from ..datasets import available_datasets
 
@@ -45,6 +46,11 @@ def run(args):
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
         bm.plot_quality_vs_cr(10, n_atoms=10, dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
         plt.savefig(f'figs/quality_vs_cr-{suffix}.pdf', bbox_inches='tight')
+
+    elif args.action == 'qts':
+        bm = TrainSizeBenchmark(method, ds.timeseries, n_splits=args.splits)
+        bm.plot_quality_vs_trainsize(dist=args.dist)  #  n_atoms=[3, 5, 10, 20, 100])
+        plt.savefig(f'figs/quality_vs_trainsize-{suffix}.pdf', bbox_inches='tight')
 
     elif args.action == 'cr':
         bm = SparsityBenchmark(method, ds.timeseries, n_splits=args.splits)
