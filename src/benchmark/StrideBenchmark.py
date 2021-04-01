@@ -1,19 +1,10 @@
 """Implement the StrideBenchmark class."""
-import sys
 import numpy as np
 from sklearn.base import clone
-import itertools
-from sklearn.model_selection import TimeSeriesSplit
-from joblib import Memory
-import matplotlib.pyplot as plt
 from dtaidistance import dtw
-from collections import defaultdict
 from tqdm import tqdm
 
-from ..methods import BaseMethod
 from .BaseBenchmark import BaseBenchmark
-
-memory = Memory('joblib_cache/', verbose=0)
 
 
 class StrideBenchmark(BaseBenchmark):
@@ -23,7 +14,6 @@ class StrideBenchmark(BaseBenchmark):
     def quality_vs_stride(X_train, X_test, method, strides, n_atoms, dist='dtw'):
         method = clone(method)
 
-        # @memory.cache
         def fit(stride):
             method.set_params(**{
                 'stride': stride,
@@ -43,7 +33,7 @@ class StrideBenchmark(BaseBenchmark):
         dists = []
         rates = []
         inv_rates = []
-        for stride in strides:
+        for stride in tqdm(strides, leave=False):
             X_pred, rate, inv_rate = fit(stride)
 
             # Must truncate test timeseries to prediction timeseries
@@ -66,9 +56,6 @@ class StrideBenchmark(BaseBenchmark):
 
         return dists, rates, inv_rates
 
-
-    ############ Plotting functions ############
-
     def plot_quality_vs_stride(self, strides, n_atoms, dist='dtw', ax=None):
         f = self.quality_vs_stride
         res = self.cross_val_wrapper(f, self.method, strides, n_atoms, dist=dist)
@@ -84,10 +71,6 @@ class StrideBenchmark(BaseBenchmark):
         ax.plot(strides, dists_avg, color='tab:blue')
         ax.fill_between(strides, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
-
-        # twinx.plot(widths, rates_avg, color='tab:orange')
-        # twinx.fill_between(widths, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
-        #                    color='tab:orange', alpha=0.3)
 
         twinx.plot(strides, inv_rates_avg, color='tab:orange')
         twinx.fill_between(strides, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
