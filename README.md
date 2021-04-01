@@ -7,6 +7,7 @@
 To download the project and install its dependencies, please run the following command line commands in the directory of your choice.
 ```sh
 git clone git@github.com:alexprz/MVA_AST_Project.git
+cd MVA_AST_Project
 python3 -m venv venv
 source venv/bin/activate
 pip install pip --upgrade
@@ -22,11 +23,12 @@ The structure of our code is organized as follows.
 
 `src/datasets`: Implements some classes to load time series.
 * `EquityDataset.py` The dataset the end-of-day stock price of 10 companies approximatly between 2000 and 2017.
+* `ArtificalDataset.py` A simulated dataset composed of periodic signals to model seasonality.
 
 `src/benchmark`: Implements the experiment that were run in our project.
 * `SparsityBenchmark.py` Influence of the sparsity constraint on the quality of the results and on the compression rate (figure 1).
 * `SizeBenchmark.py` Influence of the width and the stride on the quality of the results and on the compression rate (figure 2).
-* `` Influence of the number of atoms on the quality of the results and on the compression rate (figure 3).
+* `NumAtomsBenchmark.py` Influence of the number of atoms on the quality of the results and on the compression rate (figure 3).
 * `TrainSizeBenchmark.py`Influence of the size of the train set on the quality of the results (figure 4).
 
 
