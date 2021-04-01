@@ -1,20 +1,10 @@
 """Implement the NumAtomsBenchmark class."""
-import sys
 import numpy as np
-from sklearn.base import clone
-import itertools
-from sklearn.model_selection import TimeSeriesSplit
-from joblib import Memory
-import matplotlib.pyplot as plt
 from dtaidistance import dtw
-from collections import defaultdict
+from sklearn.base import clone
 from tqdm import tqdm
 
-from ..methods import BaseMethod
 from .BaseBenchmark import BaseBenchmark
-
-
-memory = Memory('joblib_cache/', verbose=0)
 
 
 class NumAtomsBenchmark(BaseBenchmark):
@@ -24,7 +14,6 @@ class NumAtomsBenchmark(BaseBenchmark):
     def quality_vs_numatoms(X_train, X_test, method, n_atoms, dist='dtw'):
         method = clone(method)
 
-        # @memory.cache
         def fit(num_atoms):
             method.estimator.set_params(**{
                 'n_components': num_atoms,
@@ -41,7 +30,7 @@ class NumAtomsBenchmark(BaseBenchmark):
         dists = []
         rates = []
         inv_rates = []
-        for num_atoms in n_atoms:
+        for num_atoms in tqdm(n_atoms, leave=False):
             X_pred, rate, inv_rate = fit(num_atoms)
 
             # Must truncate test timeseries to prediction timeseries
@@ -64,9 +53,6 @@ class NumAtomsBenchmark(BaseBenchmark):
 
         return dists, rates, inv_rates
 
-
-    ############ Plotting functions ############
-
     def plot_quality_vs_numatoms(self, n_atoms, dist='dtw', ax=None):
         f = self.quality_vs_numatoms
         res = self.cross_val_wrapper(f, self.method, n_atoms, dist=dist)
@@ -82,10 +68,6 @@ class NumAtomsBenchmark(BaseBenchmark):
         ax.plot(n_atoms, dists_avg, color='tab:blue')
         ax.fill_between(n_atoms, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
-
-        # twinx.plot(n_atoms, rates_avg, color='tab:orange')
-        # twinx.fill_between(n_atoms, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
-        #                    color='tab:orange', alpha=0.3)
 
         twinx.plot(n_atoms, inv_rates_avg, color='tab:orange')
         twinx.fill_between(n_atoms, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
