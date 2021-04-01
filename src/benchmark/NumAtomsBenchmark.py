@@ -91,7 +91,7 @@ class NumAtomsBenchmark(BaseBenchmark):
         twinx.fill_between(widths, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                            color='tab:orange', alpha=0.3)
 
-        ax.set_xlabel(r'Width $w$')
+        ax.set_xlabel(r'Number of atoms')
         ax.set_ylabel(f'{dist.upper()}')
         ax.tick_params(axis='y', labelcolor='tab:blue')
         twinx.set_ylabel('Compression rate')
