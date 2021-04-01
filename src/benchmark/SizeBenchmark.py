@@ -36,14 +36,17 @@ class SizeBenchmark(BaseBenchmark):
             })
             method.fit(X_train)
             X_pred_codes = method.transform_codes(X_test)
+            X_pred = method.codes_to_signal(X_pred_codes)
             rate = BaseBenchmark.compression_rate(X_test, X_pred_codes)
+            inv_rate = 1/rate
 
-            return X_pred, rate
+            return X_pred, rate, inv_rate
 
         dists = []
         rates = []
+        inv_rates = []
         for width in tqdm(widths, leave=False):
-            X_pred, rate = fit(width)
+            X_pred, rate, inv_rate = fit(width)
 
             # Must truncate test timeseries to prediction timeseries
             a1 = np.array(X_test)
@@ -61,8 +64,9 @@ class SizeBenchmark(BaseBenchmark):
 
             dists.append(d)
             rates.append(rate)
+            inv_rates.append(inv_rate)
 
-        return dists, rates
+        return dists, rates, inv_rates
 
 
     ############ Plotting functions ############
@@ -74,6 +78,7 @@ class SizeBenchmark(BaseBenchmark):
 
         dists_avg, dists_std = agg[0]
         rates_avg, rates_std = agg[1]
+        inv_rates_avg, inv_rates_std = agg[2]
 
         ax = self.get_or_create_ax(ax)
         twinx = ax.twinx()
@@ -82,8 +87,12 @@ class SizeBenchmark(BaseBenchmark):
         ax.fill_between(widths, np.maximum(dists_avg-2*dists_std, 0), dists_avg+2*dists_std,
                         color='tab:blue', alpha=0.3)
 
-        twinx.plot(widths, rates_avg, color='tab:orange')
-        twinx.fill_between(widths, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        # twinx.plot(widths, rates_avg, color='tab:orange')
+        # twinx.fill_between(widths, np.maximum(0, rates_avg-2*rates_std), rates_avg+2*rates_std,
+        #                    color='tab:orange', alpha=0.3)
+
+        twinx.plot(widths, inv_rates_avg, color='tab:orange')
+        twinx.fill_between(widths, np.maximum(0, inv_rates_avg-2*inv_rates_std), inv_rates_avg+2*inv_rates_std,
                            color='tab:orange', alpha=0.3)
 
         ax.set_xlabel(r'Width $w$')
